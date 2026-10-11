@@ -38,14 +38,14 @@ Project-local installation is useful when a repository wants the workflow versio
 
 ### Global installation
 
-For Codex, install it for the current user:
+For Codex, install it for the current user. Every project opened by Codex can then discover the skill from this user-level directory; other agent tools can use it only if they read the same directory or receive a copy in their own global skills directory:
 
 ```bash
 mkdir -p ~/.codex/skills/batched-reverse-engineering
 cp -R SKILL.md agents references ~/.codex/skills/batched-reverse-engineering/
 ```
 
-If your agent runtime uses another global skills directory, copy the same three entries into that runtime's skills directory.
+If another agent runtime uses a different global skills directory, copy the same three entries there as well. A global install is user-wide within a compatible runtime, not automatically shared across unrelated agent products.
 
 ### Ask your agent to install it
 

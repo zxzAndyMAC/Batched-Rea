@@ -38,14 +38,14 @@ cp -R /path/to/Batched-Rea/SKILL.md /path/to/Batched-Rea/agents /path/to/Batched
 
 ### 全局安装
 
-对于 Codex，可安装到当前用户的全局技能目录：
+对于 Codex，可安装到当前用户的全局技能目录。之后 Codex 打开的所有项目都可以从这个用户级目录发现技能；其他 Agent 工具只有在读取同一目录，或复制到各自的全局技能目录后才能使用：
 
 ```bash
 mkdir -p ~/.codex/skills/batched-reverse-engineering
 cp -R SKILL.md agents references ~/.codex/skills/batched-reverse-engineering/
 ```
 
-如果你的 Agent 运行时使用其他全局技能目录，将这三个条目复制到对应目录即可。
+如果其他 Agent 运行时使用不同的全局技能目录，也需要将这三个条目复制过去。全局安装表示在兼容该目录的同一运行时中对当前用户生效，并不意味着所有独立 Agent 产品会自动共享。
 
 ### 用自然语言告诉 Agent 安装
 
