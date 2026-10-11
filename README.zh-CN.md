@@ -16,6 +16,26 @@
 
 ## 安装
 
+### 交互式 `npx` 安装器
+
+npm 发布后，推荐使用：
+
+```bash
+npx batched-reverse-engineering install
+```
+
+安装器会先询问安装到用户全局目录还是当前项目目录，再让你选择 Codex、Claude Code、Cursor、Cline 和 OpenCode。它会把统一的 `SKILL.md` 和证据模板映射到各工具的技能目录；Codex 还会额外安装 `agents/openai.yaml`，其他工具安装通用 Skill 和 references。
+
+在脚本或 CI 中可以显式跳过交互：
+
+```bash
+npx batched-reverse-engineering install --global --tool codex,claude --yes
+npx batched-reverse-engineering install --local --tool cursor --yes
+npx batched-reverse-engineering install --list
+```
+
+写入文件前可使用 `--dry-run` 查看映射结果。
+
 ### 项目局部安装
 
 将技能复制到 Agent 运行时使用的项目级技能目录：

@@ -1,0 +1,15 @@
+{
+  "name": "batched-reverse-engineering",
+  "version": "1.0.0",
+  "description": "Install the Batched Reverse Engineering agent skill across supported AI coding tools.",
+  "type": "module",
+  "bin": {
+    "batched-reverse-engineering": "bin/cli.mjs"
+  },
+  "files": ["SKILL.md", "agents", "references", "bin", "README.md", "README.zh-CN.md", "LICENSE"],
+  "keywords": ["agent-skill", "reverse-engineering", "rea", "codex", "claude-code"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

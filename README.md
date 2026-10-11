@@ -16,6 +16,26 @@ It is designed for targets whose module count is unknown and whose analysis may 
 
 ## Install
 
+### Interactive `npx` installer
+
+After the package is published to npm, the recommended installation is:
+
+```bash
+npx batched-reverse-engineering install
+```
+
+The installer prompts for a global user install or a project-local install, then lets you select Codex, Claude Code, Cursor, Cline, and OpenCode. It maps the canonical `SKILL.md` and evidence references into each tool's skill directory. Codex also receives `agents/openai.yaml`; other tools receive the portable skill and references.
+
+For scripts and CI, skip prompts explicitly:
+
+```bash
+npx batched-reverse-engineering install --global --tool codex,claude --yes
+npx batched-reverse-engineering install --local --tool cursor --yes
+npx batched-reverse-engineering install --list
+```
+
+Use `--dry-run` to inspect the mapping before writing files.
+
 ### Project-local installation
 
 Copy the skill into the project-level skills directory used by your agent runtime:
