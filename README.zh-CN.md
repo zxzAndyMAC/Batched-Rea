@@ -24,7 +24,7 @@ npm 发布后，推荐使用：
 npx batched-reverse-engineering install
 ```
 
-安装器会先询问安装到用户全局目录还是当前项目目录，再让你选择 Codex、Claude Code、Cursor、Cline 和 OpenCode。它会把统一的 `SKILL.md` 和证据模板映射到各工具的技能目录；Codex 还会额外安装 `agents/openai.yaml`，其他工具安装通用 Skill 和 references。
+该命令委托给 Vercel 官方 Skills CLI。它会发现兼容的 Agent，询问全局或项目局部范围，处理已有技能，并使用 CLI 的标准链接/复制行为映射统一的 `SKILL.md` 和 references；Codex 还会额外安装 `agents/openai.yaml`。
 
 在脚本或 CI 中可以显式跳过交互：
 
@@ -34,7 +34,7 @@ npx batched-reverse-engineering install --local --tool cursor --yes
 npx batched-reverse-engineering install --list
 ```
 
-写入文件前可使用 `--dry-run` 查看映射结果。
+写入文件前可使用 `--dry-run` 查看委托给 Skills CLI 的映射；需要复制文件而不是建立链接时加 `--copy`。
 
 ### 项目局部安装
 

@@ -24,7 +24,7 @@ After the package is published to npm, the recommended installation is:
 npx batched-reverse-engineering install
 ```
 
-The installer prompts for a global user install or a project-local install, then lets you select Codex, Claude Code, Cursor, Cline, and OpenCode. It maps the canonical `SKILL.md` and evidence references into each tool's skill directory. Codex also receives `agents/openai.yaml`; other tools receive the portable skill and references.
+The command delegates installation to the official Vercel Skills CLI. It discovers compatible agents, prompts for global or project-local scope, handles existing skills, and maps the canonical `SKILL.md` and references using the CLI's standard link/copy behavior. Codex also receives `agents/openai.yaml`; other tools receive the portable skill and references.
 
 For scripts and CI, skip prompts explicitly:
 
@@ -34,7 +34,7 @@ npx batched-reverse-engineering install --local --tool cursor --yes
 npx batched-reverse-engineering install --list
 ```
 
-Use `--dry-run` to inspect the mapping before writing files.
+Use `--dry-run` to print the delegated mapping before writing files. Add `--copy` when you want files copied instead of linked.
 
 ### Project-local installation
 

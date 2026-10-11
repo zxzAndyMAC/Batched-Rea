@@ -1,6 +1,6 @@
 {
   "name": "batched-reverse-engineering",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Install the Batched Reverse Engineering agent skill across supported AI coding tools.",
   "type": "module",
   "bin": {
