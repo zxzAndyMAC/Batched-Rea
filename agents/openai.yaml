@@ -1,0 +1,4 @@
+interface:
+  display_name: "Batch Reverse Engineering"
+  short_description: "Analyze unknown software in bounded batches"
+  default_prompt: "Use $batched-reverse-engineering to analyze an unknown local app in bounded batches and produce an evidence-backed report."
