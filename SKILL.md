@@ -1,123 +1,228 @@
 ---
 name: batched-reverse-engineering
-description: Analyze an unknown or oversized local software artifact in bounded, adaptive batches, preserve evidence across batches, and synthesize a confidence-labeled architecture or comparison report.
+description: Reverse engineer unfamiliar software across desktop, mobile, web, embedded, packaged, managed, native, and mixed targets in bounded, evidence-backed batches; compare versions, reconstruct behavior, and report facts, inferences, and unknowns.
 metadata:
-  short-description: Analyze unknown software in bounded batches
-  version: "1.0"
+  short-description: Reverse engineer software in bounded evidence-backed batches
+  version: "2.0"
 ---
 
 # Batched Reverse Engineering
 
-Use this skill when the target is an unfamiliar, large, packaged, Electron/JavaScript, native, or mixed application and a single deep analysis may exceed analyzer memory, result capacity, or useful review scope. The requester does not need to know the module count in advance.
+Use this skill when the target is an unfamiliar, protected, packaged, large, or
+mixed software system and the requester needs behavior, architecture, protocol,
+version differences, or reconstruction guidance. It covers local artifacts and
+explicitly supplied runtime or network evidence. It does not authorize access to
+third-party systems, credential bypass, destructive testing, or deployment.
 
-Use REA as the analysis engine when it is available. Load `reverse-engineer-anything` first for target routing and format-specific rules. This skill adds the investigation strategy: discover the shape, partition by evidence and unanswered questions, analyze batches, stitch only supported relationships, and produce a report that distinguishes facts from inferences and unknowns.
-
-Read [evidence-ledger.md](references/evidence-ledger.md) when starting a multi-batch investigation or when handing work to another agent.
+Use `reverse-engineer-anything` first when available for REA routing and
+format-specific rules. This skill adds target classification, cost-aware
+investigation, cross-tool evidence handling, and synthesis. Read
+[references/evidence-ledger.md](references/evidence-ledger.md) for any
+multi-batch investigation or handoff.
 
 ## Investigation contract
 
-A conclusion is complete only when its claim, evidence ID or source location, coverage boundary, confidence, and remaining unknowns are recorded. Static relationships do not prove runtime reachability. A missing observation is unknown until the relevant search boundary is complete.
+Every conclusion records its claim, evidence ID or source location, target
+identity, coverage boundary, confidence, and remaining unknowns. Label claims as
+**observed**, **inferred**, or **unknown**. Static relationships do not prove
+runtime reachability; a missing observation is unknown until its search boundary
+is complete.
 
-Do not choose batches by arbitrary file count. Choose them by a concrete question and a boundary visible in the target: entrypoint, process, window, IPC/API surface, import cluster, native binding, persistence store, permission boundary, or feature trace.
+Analyze only a target the requester supplied or clearly authorized. Resolve an
+ambiguous app name, version, platform, or runtime instance before selecting an
+artifact. Do not treat nearby samples, saved reports, repository names, or
+example paths as the target.
+
+## Select the smallest useful mode
+
+Start with the least expensive mode that can answer the requested questions:
+
+- **Quick map**: identity, format, entrypoints, imports/exports, resources,
+  processes, permissions, stores, and obvious feature seeds.
+- **Focused static**: one feature, interface, function, resource, or version
+  difference traced from a concrete seed.
+- **Runtime probe**: a narrow, reversible observation when static evidence cannot
+  answer a material question.
+- **Network/API**: supplied HAR, proxy, logs, or an explicitly authorized live
+  endpoint; correlate requests with code and state transitions.
+- **Batched investigation**: several focused slices joined through stable
+  identities when a map or one trace is insufficient.
+
+Escalate only when the current mode leaves a named gap that can change the
+answer. Do not perform a broad scan merely because the target is large.
+
+## Target classification and routing
+
+Freeze target identity before analysis: absolute path or endpoint, version/build,
+SHA-256 where applicable, platform/architecture, runtime instance, tool versions,
+requested questions, and authorization boundary. Record repository revision and
+dirty paths separately from shipped-artifact identity.
+
+Classify the target from the supplied evidence, then choose the first suitable
+route. Combine routes when a target is mixed:
+
+| Target family | Initial route | Typical follow-ups |
+| --- | --- | --- |
+| PE/ELF/Mach-O, shared library, core dump | binary layout/overview or `open_binary` | functions, strings, symbols, mitigations, crash context, runtime |
+| .NET/Java/JVM/CLR, NativeAOT | managed inspection | metadata, call paths, native boundary, runtime confirmation |
+| APK/AAB/DEX, IPA, app bundle | package inventory and manifest | classes, methods, entitlements, IPC, resources, device/runtime |
+| Electron/Node/ASAR, browser bundle, web app | application/package summary | module view, feature trace, browser/Electron observation, source maps |
+| ZIP/MSIX/AppX/DMG/installer/plugin | archive/member inventory | embedded executables, manifests, resources, install/runtime effects |
+| firmware, boot image, filesystem dump, IoT image | region/filesystem map | extraction, partitions, boot chain, services, hardware assumptions |
+| scripts, bytecode, WASM, game/resource packages | parser and dependency map | deobfuscation candidates, loaders, embedded assets, runtime probes |
+| database, cache, config, logs, crash reports | format-aware inspection | schema/state transitions, provenance, correlation with code/runtime |
+| supplied HAR/pcap/proxy/API trace | capture inventory | request/response grouping, schema inference, code correlation |
+| live browser, desktop, mobile, or service runtime | passive target listing | narrow action/state probe, process/IPC/network capture |
+
+Use the actual tools advertised by the environment. If REA is available, prefer
+its retained evidence and target-free diagnostics. Otherwise use installed
+format-aware tools (for example Ghidra/IDA, JADX, dnSpy/ILSpy, Frida, browser
+devtools, platform inspectors, firmware parsers, or standard archive/database
+tools) and record their exact versions. A tool name in this table is a route,
+not a dependency or a promise that it exists.
 
 ## Workflow
 
-### 1. Freeze identity and scope
+### 1. Freeze identity, scope, and protection state
 
-Record the exact artifact path, version, digest, platform, active process or runtime target when relevant, analysis tool/version, and requested questions. For a repository comparison, record repository revision and dirty paths separately. Do not imply that uncommitted source proves a shipped-artifact claim.
+Record the target and requested questions as above. Also record whether it is
+packed, encrypted, obfuscated, stripped, signed, anti-debugged, virtualized,
+JIT/AOT compiled, or otherwise protected. Treat protection findings as evidence,
+not as permission to bypass controls. State which actions are passive, which are
+authorized probes, and which are out of scope.
 
-Completion criterion: a reader can identify exactly which bytes and runtime instance the evidence describes.
+Completion criterion: a reader can identify exactly which bytes, capture, source
+revision, and runtime instance the evidence describes.
 
 ### 2. Build a cheap map
 
-Run the smallest useful overview or inventory first. For an Electron/JavaScript target, prefer the REA application summary; for an archive, inventory members; for a native target, record format, architectures, imports/exports and load boundaries. Capture entrypoints, processes, windows, IPC/API surfaces, native addons, stores and obvious feature seeds.
+Inventory the smallest useful surface: formats, architectures, entrypoints,
+processes, windows/services, imports/exports, IPC/RPC/API surfaces, permissions,
+native bindings, loaders, stores, caches, configuration, resources, and network
+endpoints. For a packaged target inspect manifests and embedded members before
+assuming the outer file is the executable. Record tool and coverage limits.
 
-The map is a discovery artifact, not a final architecture. Record analyzer limitations immediately.
-
-Completion criterion: each requested question has at least one candidate entrypoint or an explicit unresolved starting gap.
+Completion criterion: each question has a candidate seed and boundary, or an
+explicit unresolved starting gap.
 
 ### 3. Form adaptive batches
 
-Create a batch ledger. Each batch must contain:
+Create a ledger entry per batch. Each batch has:
 
-- one narrow question or one connected feature slice;
-- seed node, path, channel, export, process, or runtime action;
-- why the batch is needed and which prior evidence it reuses;
-- expected output and stopping condition;
-- likely cross-batch joins, such as IPC sender/receiver, import/export, shared store, session ID, or process handoff.
+- one falsifiable question or connected feature slice;
+- a seed path, node, symbol, export, channel, request, process, state, or action;
+- reused evidence and the reason this batch is needed;
+- included and omitted scope, expected output, and a stopping condition;
+- likely joins: imports/exports, IPC/RPC, process handoff, shared ID, storage key,
+  request correlation, or version identity.
 
-Prefer this order: entrypoint → controller → policy/permission gate → runtime adapter → persistence/evidence → result or recovery. Split a batch when semantic expansion consumes the parent result budget, when a file exhausts the worker heap, or when unrelated containment relationships dominate the trace.
+Prefer entrypoint → controller → policy/permission gate → adapter or protocol →
+state/persistence → result or recovery. Split when an analyzer budget, worker
+heap, file/module boundary, process boundary, or unrelated containment makes the
+question ambiguous. Never split only by arbitrary file count.
 
-Completion criterion: every batch has a falsifiable question and a bounded stopping condition; no batch exists only because a file was nearby.
+### 4. Analyze without duplication
 
-### 4. Analyze each batch without duplication
+Reuse retained evidence or an exported bundle. Page identities before selecting a
+node, trace one seed and direction at a time, and inspect an item before asking
+for a broad trace. Save the exact producer command/parameters, evidence IDs,
+digests, selected locations, observations, inference basis, unknowns, and next
+probe. Never repeat an identical analysis merely to obtain a larger display.
 
-Reuse the retained parent Evidence or exported bundle. Page module identities before selecting a node. Trace one seed and one direction at a time; use `both` only when the question requires it. Inspect a module item before requesting a broad trace when the module observations already answer the question.
+### 5. Handle protected targets honestly
 
-For every batch, save:
+For packing, obfuscation, anti-debugging, encrypted resources, stripped symbols,
+JIT/AOT, or signing constraints:
 
-- producer command and exact parameters;
-- Evidence ID, artifact digest, selected node IDs and source paths;
-- observations and direct quotations only when needed for disambiguation;
-- inferred relationships, their basis, and confidence;
-- unknown or incomplete scopes;
-- next batch triggers.
+1. identify the protection and the affected coverage;
+2. use non-invasive metadata, resources, imports, traces, or supplied runtime
+   evidence first;
+3. narrow the question or use an authorized observation if protection blocks it;
+4. record what was not recovered and why.
 
-Never repeat an identical analysis merely to get a larger display. Use a smaller view, a narrower trace, or an exported evidence bundle.
+Do not claim deobfuscation, unpacking, reachability, or semantic equivalence from
+names, strings, signatures, or a successful launch alone. If a protection
+boundary cannot be crossed within scope, mark the result unknown and give the
+smallest next probe or required artifact.
 
-Completion criterion: the batch answers its question or records a concrete unresolved gap and the next probe that could resolve it.
+### 6. Correlate processes, state, and network behavior
 
-### 5. Stitch the evidence graph
+Follow boundaries that affect the requested behavior: IPC/RPC, plugin hosts,
+browser contexts, native addons, services, permissions, files, databases,
+caches, environment/configuration, and request/response flows. For supplied
+HAR/pcap/proxy/log evidence, preserve record ordinals, timestamps, host/port,
+direction, request IDs, and producer metadata; do not fetch recorded URLs or
+describe historical captures as live behavior. Infer protocol fields only when
+multiple observations support the mapping, and keep opaque bytes as opaque.
 
-Join batches only through stable identity and corroborating evidence: exact paths plus artifact digest, unique IPC literals, explicit imports/exports, shared identifiers, matching process boundaries, common persistence keys, or bounded runtime observations. Treat minified names, filenames, and semantic similarity as candidates, not proof.
+### 7. Compare versions and platforms
 
-Classify every synthesized statement as:
+For each version/platform/build, freeze identity independently. Compare manifests,
+resources, symbols, interfaces, feature traces, permissions, protocol schemas,
+and runtime outcomes only after confirming artifact identity. Classify a difference
+as observed, inferred, or unknown; preserve conflicts instead of silently
+choosing one explanation. Do not infer a shipped-artifact change from an
+uncommitted source tree.
 
-- **Observed**: directly present in static or runtime evidence;
-- **Inferred**: a bounded interpretation supported by multiple observations;
-- **Unknown**: not established within the analyzed boundary.
+### 8. Add narrow runtime probes
 
-If two batches disagree, preserve both observations, check artifact/version identity, and mark the conflict. Do not silently pick the more convenient explanation.
+Use passive browser, Electron, process, mobile, native UI, or service observation
+only when static evidence cannot answer a material question. Keep probes narrow,
+reversible, and within the stated target/action scope. Record target identity,
+action, initial state, result, timing/state dependence, and captured evidence.
+Runtime evidence can confirm reachability and transitions; it does not make
+unrelated static edges observed.
 
-Completion criterion: every report claim points to one or more ledger entries and every cross-batch edge has a stated join basis.
+### 9. Control resource limits and tool failure
 
-### 6. Add runtime probes only for material gaps
+Treat failures as coverage information:
 
-Use passive runtime, Electron, browser, process, or native UI observation only when static evidence cannot answer a question that changes the conclusion. Keep probes narrow and reversible. Record target identity, action scope, observed result, and whether the observation is representative or state-dependent.
+- worker heap: retry only the affected module with a supported limit or split it;
+- result budget/capacity: request a page, item, narrower trace, or new batch;
+- transport truncation: use retained evidence or export a bundle;
+- unavailable analyzer: use the nearest installed format-aware route and mark the
+  changed coverage;
+- missing runtime, symbols, source maps, or capture: continue static work and
+  record the missing prerequisite.
 
-Runtime evidence can confirm reachability and state transitions; it does not retroactively make unrelated static relationships observed.
+Do not install or upgrade unrelated software. Do not rerun a complete analysis
+when a smaller retry addresses the reported limit.
 
-Completion criterion: each probe closes a named gap or is recorded as inconclusive with a reason.
+### 10. Stitch the evidence graph
 
-### 7. Control resource limits
+Join batches only through stable identity and corroboration: exact path plus
+digest, explicit import/export, unique IPC/API literal, shared identifier or
+storage key, matching process boundary, request correlation, version identity,
+or bounded runtime observation. Filenames, minified names, proximity, and
+semantic similarity are candidates, not proof. State the join basis and
+confidence for every cross-batch edge. Preserve disagreements and artifact
+mismatches.
 
-Treat analyzer resource messages as coverage information:
+### 11. Produce the synthesis
 
-- **Worker heap exhausted**: retry only the affected module with a larger analyzer heap if available, or split the module/feature; do not rerun the whole application by default.
-- **Parent result budget/capacity exhausted**: request a page, item view, narrower trace, or separate batch; increasing model context will not change this analyzer limit.
-- **Transport truncation**: use the retained Evidence ID or export a bundle; never parse a truncated preview as canonical evidence.
+For an architecture, comparison, protocol, or reconstruction report include:
 
-Record the exact limit and affected scope. A resource-limited batch may support static facts while leaving semantic relationships unknown.
+1. target identity, authorization boundary, method, and tools;
+2. coverage, protection, runtime, and resource limits;
+3. observed architecture and feature/protocol paths;
+4. version/platform differences when requested;
+5. facts, bounded inferences, unknowns, and conflicts with evidence links;
+6. prioritized recommendations tied to concrete artifact boundaries;
+7. the smallest validation plan and next probes;
+8. a compact evidence index with IDs, digests, paths, captures, and batch names.
 
-Completion criterion: the report states analyzed coverage, omitted scope, and the reason for every material gap.
+Use Archify when a diagram clarifies architecture, workflow, sequence, dataflow,
+or lifecycle; label proposed designs as proposed. Use `writing-for-agents` when
+the report contains an implementation prompt; end each step with a checkable
+criterion and keep branch-specific detail behind file pointers.
 
-### 8. Produce the synthesis
-
-For an architecture or comparison report, include:
-
-1. target identity and method;
-2. evidence/coverage limits;
-3. observed architecture and feature paths;
-4. comparison or reconstruction findings;
-5. confidence-labeled unknowns;
-6. prioritized recommendations tied to concrete source or artifact boundaries;
-7. validation plan for the next probes;
-8. a compact evidence index with Evidence IDs, digests, paths and batch names.
-
-Use Archify when diagrams clarify architecture, workflow, sequence, dataflow, or lifecycle. Diagram nodes and relationships must use the stitched evidence; proposed target designs must be labeled as proposed. Use `writing-for-agents` when the report includes an implementation prompt: put shared steps in the prompt, move branch-specific detail behind file pointers, and end each step with a checkable completion criterion.
-
-Completion criterion: another agent can reproduce the investigation from the ledger, understand what is known, and choose the next bounded batch without rediscovering the target.
+Completion criterion: another agent can reproduce the investigation, understand
+what is known, and choose the next bounded batch without rediscovering the target.
 
 ## Stop conditions
 
-Stop the investigation when all requested questions are answered or have explicit unknowns, the next batch would not change a decision, or the remaining gap requires user-owned access, a different artifact version, or a runtime action outside scope. Report the stop reason. Do not call a resource-limited static investigation comprehensive.
+Stop when all requested questions are answered or have explicit unknowns, the
+next batch would not change a decision, the target is outside authorization, or
+the remaining gap requires a different artifact/version, user-owned access, or
+runtime action outside scope. Report the stop reason. Never call a
+resource-limited or protection-limited investigation comprehensive.

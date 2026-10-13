@@ -2,7 +2,7 @@
 
 [简体中文](README.zh-CN.md)
 
-A reusable agent skill for reverse-engineering unfamiliar or oversized local software in bounded, evidence-backed batches.
+A reusable agent skill for reverse-engineering unfamiliar software across desktop, mobile, web, service, embedded, packaged, and mixed targets in bounded, evidence-backed batches.
 
 It is designed for targets whose module count is unknown and whose analysis may exceed an analyzer's heap, result budget, or practical review scope. The skill uses REA as the analysis engine when available, preserves evidence across batches, joins only supported relationships, and produces a confidence-labeled architecture or comparison report.
 
@@ -139,4 +139,4 @@ Keep changes focused on repeatable investigation behavior. If you add a rule, ex
 
 ## License
 
-No license has been declared yet. Add a license before distributing this repository for reuse outside your organization.
+This repository is licensed under the MIT License. See [LICENSE](LICENSE).
